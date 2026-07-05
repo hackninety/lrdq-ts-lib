@@ -16,6 +16,7 @@ const manifest = (manifestData as unknown as { manifest: DocMeta[] }).manifest;
 /** 各书载荷加载器（新书登记于此，与 gen-data CORPUS 对应） */
 const LOADERS: Record<string, () => Promise<{ payload: { docs: Record<string, string> } }>> = {
   lrdq: () => import('./books/lrdq'),
+  lrxj: () => import('./books/lrxj'),
 };
 
 const cache = new Map<string, Record<string, string>>();

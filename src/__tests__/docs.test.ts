@@ -7,7 +7,7 @@ describe('典籍库 · 多书 manifest', () => {
   const books = manifest.filter((d) => d.group === 'book');
 
   it('book 组齐全且按卷有序（首册《六壬大全》）', () => {
-    expect(books.map((d) => d.title)).toEqual([
+    expect(books.filter((d) => d.book === '六壬大全').map((d) => d.title)).toEqual([
       '提要（四庫總目）',
       '卷一 起例',
       '卷二 神將釋',
@@ -26,10 +26,26 @@ describe('典籍库 · 多书 manifest', () => {
 
   it('manifest 携书目身份：path 带 slug 前缀、book/dynasty 落到条目', () => {
     for (const d of manifest) {
-      expect(d.path.startsWith('lrdq/'), d.path).toBe(true);
-      expect(d.book).toBe('六壬大全');
-      expect(d.dynasty).toBe('明');
+      const slug = d.path.split('/')[0];
+      expect(['lrdq', 'lrxj'], d.path).toContain(slug);
+      expect(d.book, d.path).toBe(slug === 'lrdq' ? '六壬大全' : '六壬心鏡');
+      expect(d.dynasty, d.path).toBe(slug === 'lrdq' ? '明' : '唐');
     }
+  });
+
+  it('第二部书《六壬心鏡》九篇齐整（升格多书首验）', async () => {
+    const xj = manifest.filter((d) => d.book === '六壬心鏡');
+    expect(xj).toHaveLength(9);
+    expect(xj[0].title).toBe('序·總目');
+    expect(xj[0].author).toBe('徐道符');
+    expect(xj[8].title).toBe('卷八 兵占');
+    const j1 = (await getDocMarkdown('lrxj/book/juan01.md'))!;
+    expect(j1).toContain('# 大六壬心鏡卷一');
+    expect(j1).toContain('## 克賊第一');
+    expect(j1).toContain('## 蒿矢卦彈射卦附');
+    const xu = (await getDocMarkdown('lrxj/book/xu.md'))!;
+    expect(xu).toContain('程樹勛');
+    expect(/^## /m.test(xu)).toBe(false); // 序·總目整页免提级
   });
 
   it('每篇均可异步取且非空', async () => {

@@ -220,6 +220,26 @@ const BOOK_PAGES = [
   { file: '10-juan10.txt', path: 'book/juan10.md', title: '卷十 課經集四' },
 ];
 
+// 《大六壬心鏡》（唐·徐道符）：八门分类占法手册，門→节两级；无卷题行（各页 fallbackH1）
+const LRXJ_SECTION_RES = [
+  /^[^，。；：、？！\s　]{2,8}門$/, // 門级分组：釋課元微門／占宅門…
+  /^[^，。；：、？！\s　]{2,8}[卦課](?:[^，。；：、？！\s　]{1,4}附)?$/, // 卦体节：元首卦／天禍課／蒿矢卦彈射卦附
+  /^[^，。；：、？！\s　]{2,10}第[一二三四五六七八九十]+(?:[一二三四五六七八九十]{1,2}首)?$/, // 克賊第一／伏吟第七三首
+  /^(登明|河魁|從魁|傳送|小吉|勝光|太乙|天罡|太衝|功曹|大吉|神後)[子丑寅卯辰巳午未申酉戌亥]神$/, // 雜神門十二神
+  /^占[^，。；：、？！\s　]{1,9}$/, // 占目：占人宅／占天晴否…
+];
+const LRXJ_PAGES = [
+  { file: '00-xu.txt', path: 'book/xu.md', title: '序·總目', fallbackH1: '《大六壬心鏡》序·總目', noSections: true },
+  { file: '01-juan01.txt', path: 'book/juan01.md', title: '卷一 釋課元微·宗首九科', fallbackH1: '大六壬心鏡卷一　釋課元微·宗首九科·淫泆' },
+  { file: '02-juan02.txt', path: 'book/juan02.md', title: '卷二 新孕·隱匿·乖別·十雜', fallbackH1: '大六壬心鏡卷二　新孕·隱匿·乖別·十雜' },
+  { file: '03-juan03.txt', path: 'book/juan03.md', title: '卷三 凶否·吉泰', fallbackH1: '大六壬心鏡卷三　凶否·吉泰' },
+  { file: '04-juan04.txt', path: 'book/juan04.md', title: '卷四 雜神·雜將·三宮時', fallbackH1: '大六壬心鏡卷四　雜神·雜將·三宮時' },
+  { file: '05-juan05.txt', path: 'book/juan05.md', title: '卷五 占宅·婚產·田蠶', fallbackH1: '大六壬心鏡卷五　占宅·修造·黃黑道·婚姻·產育·田蠶' },
+  { file: '06-juan06.txt', path: 'book/juan06.md', title: '卷六 商賈·官職·亡盜·官訟', fallbackH1: '大六壬心鏡卷六　商賈·假借·奴婢·六畜·官職·亡盜·官訟' },
+  { file: '07-juan07.txt', path: 'book/juan07.md', title: '卷七 疾病·行人·天時·雜課', fallbackH1: '大六壬心鏡卷七　疾病·行人·天時·雜課' },
+  { file: '08-juan08.txt', path: 'book/juan08.md', title: '卷八 兵占', fallbackH1: '大六壬心鏡卷八　兵占' },
+];
+
 // ---------- 语料库书目注册表（新书在此登记：整卷典籍化即配即产；深度结构化另开分支） ----------
 const CORPUS = [
   {
@@ -233,6 +253,19 @@ const CORPUS = [
     titleH1: (m) => `六壬大全卷${m[1]}　${m[2].trim()}`,
     sectionRes: SECTION_RES,
     pages: BOOK_PAGES,
+  },
+  {
+    slug: 'lrxj',
+    book: '六壬心鏡',
+    dynasty: '唐',
+    author: '徐道符',
+    textDir: path.join(root, 'docs/corpus/lrxj/text'),
+    provenance: '> 底本：ctext.org wiki res=486357 转录《大六壬心鏡》（唐·徐道符撰，清程樹勛手錄本）。',
+    furnitureRe: /$^/, // 转录无页衬行
+    titleRe: /$^/, // 底本无卷题行，各页用 fallbackH1
+    titleH1: () => '',
+    sectionRes: LRXJ_SECTION_RES,
+    pages: LRXJ_PAGES,
   },
 ];
 
@@ -254,7 +287,7 @@ function juanToMd(page, bk) {
         continue;
       }
     }
-    if (bk.sectionRes.some((re) => re.test(line))) {
+    if (!page.noSections && bk.sectionRes.some((re) => re.test(line))) {
       body.push(`## ${line}`);
       sections++;
       continue;
@@ -273,7 +306,10 @@ for (const bk of CORPUS) {
   for (const p of bk.pages) {
     const { md, sections } = juanToMd(p, bk);
     const full = `${bk.slug}/${p.path}`;
-    manifest.push({ path: full, title: p.title, group: 'book', book: bk.book, dynasty: bk.dynasty });
+    manifest.push({
+      path: full, title: p.title, group: 'book', book: bk.book, dynasty: bk.dynasty,
+      ...(bk.author ? { author: bk.author } : {}),
+    });
     docs[full] = md;
     console.log(`${full}: ${(md.length / 1024).toFixed(0)}KB，小节 ${sections}`);
   }

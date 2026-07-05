@@ -78,6 +78,78 @@
    "dynasty": "明"
   },
   {
+   "path": "lrxj/book/xu.md",
+   "title": "序·總目",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan01.md",
+   "title": "卷一 釋課元微·宗首九科",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan02.md",
+   "title": "卷二 新孕·隱匿·乖別·十雜",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan03.md",
+   "title": "卷三 凶否·吉泰",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan04.md",
+   "title": "卷四 雜神·雜將·三宮時",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan05.md",
+   "title": "卷五 占宅·婚產·田蠶",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan06.md",
+   "title": "卷六 商賈·官職·亡盜·官訟",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan07.md",
+   "title": "卷七 疾病·行人·天時·雜課",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
+   "path": "lrxj/book/juan08.md",
+   "title": "卷八 兵占",
+   "group": "book",
+   "book": "六壬心鏡",
+   "dynasty": "唐",
+   "author": "徐道符"
+  },
+  {
    "path": "lrdq/book/juan11.md",
    "title": "卷十一 畢法賦上",
    "group": "book",
