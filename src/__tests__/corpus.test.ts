@@ -6,41 +6,59 @@ import {
 } from '../shensha';
 import { nextZhi, ZHI } from '../normalize';
 
-describe('課經深度结构化（卷七~卷十）', () => {
+describe('课体节库（大全課經 + 心鏡）', () => {
   const all = getKeJing();
+  const dq = all.filter((e) => e.book === '六壬大全');
+  const xj = all.filter((e) => e.book === '六壬心鏡');
 
-  it('七十节齐全且节序连续', () => {
-    expect(all).toHaveLength(70);
-    expect(all.map((e) => e.order)).toEqual(Array.from({ length: 70 }, (_, i) => i + 1));
+  it('課經七十节 + 心鏡卷一~三课体节，节序连续', () => {
+    expect(dq).toHaveLength(70);
+    expect(xj.length).toBeGreaterThanOrEqual(60);
+    expect(all.map((e) => e.order)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
     expect(all[0].name).toBe('元首');
     expect(all[69].name).toBe('物類');
     // 秋卯將三課（卷九）底本仅列三日课式，正文天然短，阈值放宽
     expect(all.every((e) => e.text.length > 10)).toBe(true);
   });
 
-  it('卷九「三交課」底本重出两节照收', () => {
-    expect(all.filter((e) => e.name === '三交')).toHaveLength(2);
+  it('重出与跨书互证：大全三交×2＋心鏡三交×1；元首两书各一', () => {
+    expect(all.filter((e) => e.name === '三交')).toHaveLength(3);
+    const ys = all.filter((e) => e.name === '元首');
+    expect(ys.map((e) => e.book)).toEqual(['六壬大全', '六壬心鏡']);
   });
 
-  it('元首課正文锚点', () => {
+  it('元首課正文锚点（首个命中为課經）', () => {
     const e = getKeJingEntry('元首')!;
+    expect(e.book).toBe('六壬大全');
     expect(e.juan).toBe(7);
     expect(e.text).toContain('凡一上克下，餘課無克');
   });
 
-  it('课名折叠匹配：繁简/剋克/課后缀', () => {
+  it('课名折叠匹配：繁简/剋克/課卦后缀/倒序别名', () => {
     expect(foldKeName('遙剋課')).toBe('遥克');
+    expect(foldKeName('克賊')).toBe('贼克');
+    expect(foldKeName('天羅地網卦')).toBe('天罗地网');
     expect(getKeJingEntry('遥克')?.name).toBe('遙克');
     expect(getKeJingEntry('重审课')?.name).toBe('重審');
     expect(getKeJingEntry('龙德')?.name).toBe('龍德');
-    expect(getKeJingEntry('涉害')).toBeUndefined(); // 課經无涉害課
+    // 贼克（通行取法名）→ 心鏡「克賊第一」
+    const zk = getKeJingEntry('贼克')!;
+    expect(zk.book).toBe('六壬心鏡');
+    expect(zk.juan).toBe(1);
+    // 涉害在心鏡九法有其节（課經无）
+    expect(getKeJingEntry('涉害')?.book).toBe('六壬心鏡');
   });
 
-  it('findKeJing 含重出节且按节序', () => {
+  it('findKeJing 含重出节与跨书节', () => {
     const r = findKeJing(['三交', '元首', '不存在']);
-    expect(r).toHaveLength(3);
+    expect(r).toHaveLength(5);
     expect(r[0].name).toBe('元首');
-    expect(r.filter((e) => e.name === '三交')).toHaveLength(2);
+  });
+
+  it('心鏡「十雜卦」组题不入库，其下甲己等卦入库', () => {
+    expect(all.some((e) => e.name === '十雜')).toBe(false);
+    expect(xj.some((e) => e.name === '甲己')).toBe(true);
+    expect(xj.some((e) => e.name === '曲直')).toBe(true);
   });
 });
 

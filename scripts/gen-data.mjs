@@ -365,8 +365,10 @@ console.log(
   `docs-manifest.json: ${manifest.length} 篇；载荷 ${Object.keys(docsBySlug).map((s) => `docs-${s}.json`).join('、')}`,
 );
 
-// ---------- 課經（卷七~卷十）：深度结构化 ----------
-// 每个「XX課」独行节题起一条，正文逐行收录；卷九「三交課」底本重出两节，照收。
+// ---------- 课体节库（課經 + 心鏡）：深度结构化，供宿主课体深链 ----------
+// 大全課經：每个「XX課」独行节题起一条；卷九「三交課」底本重出两节，照收。
+// 心鏡卷一~卷三：九法（克賊第一…）与卦体节（元首卦…天羅地網卦）并入，
+// 同名跨书互证（如元首两书各一节）；其余门/神/占目节题只作分界不入库。
 {
   // 6 字上限与整卷典籍化口径一致；卷七「順/逆連茹三奇十二課」（8 字）为三奇課内子表头，非独立节
   const KE_HEAD_RE = /^[^，。；：、？！\s　]{1,6}課$/;
@@ -383,7 +385,7 @@ console.log(
     for (const line of read(file)) {
       if (FURNITURE_RE.test(line) || TITLE_RE.test(line)) continue;
       if (KE_HEAD_RE.test(line)) {
-        cur = { name: line.replace(/課$/, ''), juan, order: keJing.length + 1, text: [] };
+        cur = { name: line.replace(/課$/, ''), book: '六壬大全', juan, order: keJing.length + 1, text: [] };
         keJing.push(cur);
         continue;
       }
@@ -395,24 +397,61 @@ console.log(
     console.error(`✗ 課經节数 ${keJing.length} ≠ 70`);
     process.exit(1);
   }
+
+  // 心鏡卷一~卷三
+  const XJ_FA_RE = /^(.{1,6})第[一二三四五六七八九十]+(?:[一二三四五六七八九十]{1,2}首)?$/;
+  const XJ_GUA_RE = /^(.{1,10}?)[卦課](?:[^，。；：、？！\s　]{1,4}附)?$/;
+  const xjDir = path.join(root, 'docs/corpus/lrxj/text');
+  let xjCount = 0;
+  for (const [file, juan] of [['01-juan01.txt', 1], ['02-juan02.txt', 2], ['03-juan03.txt', 3]]) {
+    const lines = readFileSync(path.join(xjDir, file), 'utf8').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    let cur = null;
+    for (const line of lines) {
+      const fa = line.match(XJ_FA_RE);
+      const gua = fa ? null : line.match(XJ_GUA_RE);
+      // 「十雜卦」为组题（其下甲己卦等才是节），只作分界不入库
+      if (gua && gua[1] === '十雜') {
+        cur = null;
+        continue;
+      }
+      if (fa || gua) {
+        cur = { name: (fa ?? gua)[1], book: '六壬心鏡', juan, order: keJing.length + 1, text: [] };
+        keJing.push(cur);
+        xjCount++;
+        continue;
+      }
+      // 其余节题（門/神/占目）只作分界，防止正文误并入上一节
+      if (LRXJ_SECTION_RES.some((re) => re.test(line))) {
+        cur = null;
+        continue;
+      }
+      if (cur) cur.text.push(line);
+    }
+  }
+  if (xjCount < 60 || xjCount > 90) {
+    console.error(`✗ 心鏡课体节数异常: ${xjCount}`);
+    process.exit(1);
+  }
+
   const empty = keJing.filter((e) => !e.text.length);
   if (empty.length) {
-    console.error('✗ 課經空节:', empty.map((e) => e.name));
+    console.error('✗ 课体空节:', empty.map((e) => `${e.book}${e.name}`));
     process.exit(1);
   }
   writeFileSync(
     path.join(outDir, 'keju.json'),
     JSON.stringify(
       {
-        source: '欽定四庫全書本《六壬大全》卷七~卷十《課經集》（ctext.org wiki res=260435 转录）',
-        entries: keJing.map((e) => ({ name: e.name, juan: e.juan, order: e.order, text: e.text.join('\n\n') })),
+        source:
+          '《六壬大全》卷七~卷十《課經集》（ctext res=260435）＋《六壬心鏡》卷一~卷三九法/卦体节（ctext res=486357）',
+        entries: keJing.map((e) => ({ name: e.name, book: e.book, juan: e.juan, order: e.order, text: e.text.join('\n\n') })),
       },
       null,
       1,
     ),
     'utf8',
   );
-  console.log(`keju.json: ${keJing.length} 节${orphan ? `（节前散行 ${orphan}）` : ''}`);
+  console.log(`keju.json: 課經 ${keJing.length - xjCount} 节 + 心鏡 ${xjCount} 节${orphan ? `（节前散行 ${orphan}）` : ''}`);
 }
 
 // ---------- 神煞（卷一）：三表映射化 + 月令杂列保守解析 ----------
