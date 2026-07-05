@@ -1,6 +1,6 @@
 {
   "name": "lrdq-ts-lib",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "大六壬典籍语料库（首册《六壬大全》明·四庫全書本全书）与《畢法賦》百法命中检测引擎 — Da LiuRen classics corpus & BiFa-100 pattern detector",
   "type": "module",
   "main": "./dist/index.js",
@@ -50,7 +50,7 @@
     "古籍",
     "divination"
   ],
-  "license": "MIT",
+  "license": "CC-BY-NC-4.0",
   "devDependencies": {
     "@types/node": "^25.5.0",
     "typescript": "^5.9.3",

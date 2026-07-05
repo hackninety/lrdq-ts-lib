@@ -150,6 +150,46 @@
    "author": "徐道符"
   },
   {
+   "path": "lrzn/book/xu.md",
+   "title": "序·目錄·原序",
+   "group": "book",
+   "book": "六壬指南注解",
+   "dynasty": "明",
+   "author": "陳公獻撰·張洪注"
+  },
+  {
+   "path": "lrzn/book/juan01.md",
+   "title": "卷一 注釋心印賦",
+   "group": "book",
+   "book": "六壬指南注解",
+   "dynasty": "明",
+   "author": "陳公獻撰·張洪注"
+  },
+  {
+   "path": "lrzn/book/juan02.md",
+   "title": "卷二 注釋指掌賦",
+   "group": "book",
+   "book": "六壬指南注解",
+   "dynasty": "明",
+   "author": "陳公獻撰·張洪注"
+  },
+  {
+   "path": "lrzn/book/juan03.md",
+   "title": "卷三 會纂占驗指南",
+   "group": "book",
+   "book": "六壬指南注解",
+   "dynasty": "明",
+   "author": "陳公獻撰·張洪注"
+  },
+  {
+   "path": "lrzn/book/juan04.md",
+   "title": "卷四 神煞指南",
+   "group": "book",
+   "book": "六壬指南注解",
+   "dynasty": "明",
+   "author": "陳公獻撰·張洪注"
+  },
+  {
    "path": "lrdq/book/juan11.md",
    "title": "卷十一 畢法賦上",
    "group": "book",

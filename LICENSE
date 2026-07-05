@@ -1,27 +1,24 @@
-MIT License
-
+lrdq-ts-lib — 大六壬典籍语料库与毕法检测引擎
 Copyright (c) 2026 hackninety
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+本仓库（代码与语料数据）整体采用
+Creative Commons Attribution-NonCommercial 4.0 International（CC BY-NC 4.0）
+许可协议发布：署名、非商业性使用；不得将本仓库内容用于商业目的。
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+协议全文（法律文本）：
+https://creativecommons.org/licenses/by-nc/4.0/legalcode.zh-hans
+协议摘要：
+https://creativecommons.org/licenses/by-nc/4.0/deed.zh-hans
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+内容层次说明：
+1. 古籍原文（《六壬大全》《六壬心鏡》《大六壬指南》等）为公有领域，
+   任何人可自由使用，不受本许可限制。
+2. 各典籍的数字化转录来自 ctext.org wiki 等社区转录（出处逐书记录于
+   docs/corpus/<slug>/ 与生成文档的底本行）。
+3. 在版权期内的当代注解/整理内容（如《六壬指南注解》之張洪注文，2000）
+   版权属其作者；本仓库仅以非商业研习目的汇编收录，并如实署名与标注出处。
+   如权利人对收录有异议，请提交 issue，将立即移除（takedown on request）。
+4. 本仓库自有代码（检测引擎、解析脚本、类型定义）与结构化数据同样按
+   CC BY-NC 4.0 提供。
 
----
-
-本库所收《六壬大全》（明代辑，欽定四庫全書本）及其中宋·凌福之《畢法賦》
-为公有领域古籍，文本采集自 ctext.org 维基转录（res=260435），仅作忠实
-整理与结构化；古籍原文本身不受著作权保护。
+此前版本（v0.7.0 及更早）以 MIT 许可发布的快照不受本次变更追溯影响。

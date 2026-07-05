@@ -25,12 +25,31 @@ describe('典籍库 · 多书 manifest', () => {
   });
 
   it('manifest 携书目身份：path 带 slug 前缀、book/dynasty 落到条目', () => {
+    const BOOKS: Record<string, [string, string]> = {
+      lrdq: ['六壬大全', '明'],
+      lrxj: ['六壬心鏡', '唐'],
+      lrzn: ['六壬指南注解', '明'],
+    };
     for (const d of manifest) {
       const slug = d.path.split('/')[0];
-      expect(['lrdq', 'lrxj'], d.path).toContain(slug);
-      expect(d.book, d.path).toBe(slug === 'lrdq' ? '六壬大全' : '六壬心鏡');
-      expect(d.dynasty, d.path).toBe(slug === 'lrdq' ? '明' : '唐');
+      expect(Object.keys(BOOKS), d.path).toContain(slug);
+      expect(d.book, d.path).toBe(BOOKS[slug][0]);
+      expect(d.dynasty, d.path).toBe(BOOKS[slug][1]);
     }
+  });
+
+  it('第三部书《六壬指南注解》五篇齐整（署名与提级）', async () => {
+    const zn = manifest.filter((d) => d.book === '六壬指南注解');
+    expect(zn).toHaveLength(5);
+    expect(zn[0].author).toBe('陳公獻撰·張洪注');
+    const j3 = (await getDocMarkdown('lrzn/book/juan03.md'))!;
+    expect(j3).toContain('# 六壬指南注解卷三　大六壬會纂占驗指南');
+    expect(j3).toContain('## 總論章第一');
+    expect(j3).toContain('## 婚姻章第七');
+    const xu = (await getDocMarkdown('lrzn/book/xu.md'))!;
+    expect(xu).toContain('順治壬辰'); // 程起鸞原序
+    expect(xu).toContain('北海張洪'); // 今注自序署名
+    expect((await getDocMarkdown('lrzn/book/juan01.md'))!).toContain('六壬如入');
   });
 
   it('第二部书《六壬心鏡》九篇齐整（升格多书首验）', async () => {

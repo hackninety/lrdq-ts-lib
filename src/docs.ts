@@ -17,6 +17,7 @@ const manifest = (manifestData as unknown as { manifest: DocMeta[] }).manifest;
 const LOADERS: Record<string, () => Promise<{ payload: { docs: Record<string, string> } }>> = {
   lrdq: () => import('./books/lrdq'),
   lrxj: () => import('./books/lrxj'),
+  lrzn: () => import('./books/lrzn'),
 };
 
 const cache = new Map<string, Record<string, string>>();

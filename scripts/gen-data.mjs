@@ -267,6 +267,26 @@ const CORPUS = [
     sectionRes: LRXJ_SECTION_RES,
     pages: LRXJ_PAGES,
   },
+  {
+    slug: 'lrzn',
+    book: '六壬指南注解',
+    dynasty: '明',
+    author: '陳公獻撰·張洪注',
+    textDir: path.join(root, 'docs/corpus/lrzn/text'),
+    provenance:
+      '> 底本：ctext.org wiki res=516644 转录《六壬指南注解》——明末清初·陳公獻《大六壬指南》（順治壬辰刊系统，含周元曙、程起鸞原序），今·張洪注解本（自序落款庚辰年，2000）。陳注与張注混排无标记，依底本照录；今注版权属注者，本库以非商用许可（CC BY-NC 4.0）汇编研习，如权利人异议即撤。',
+    furnitureRe: /$^/,
+    titleRe: /^卷(之?[一二三四五六七八九十]{1,3})[\s　]+(.+)$/,
+    titleH1: (m) => `六壬指南注解卷${m[1]}　${m[2].trim()}`,
+    sectionRes: [/^[^，。；：、？！\s　]{2,10}第[一二三四五六七八九十]+$/], // 會纂占驗分章：總論章第一…
+    pages: [
+      { file: '00-xu.txt', path: 'book/xu.md', title: '序·目錄·原序', fallbackH1: '《六壬指南注解》序·目錄·原序', noSections: true },
+      { file: '01-juan01.txt', path: 'book/juan01.md', title: '卷一 注釋心印賦', fallbackH1: '六壬指南注解卷一　注釋大六壬心印賦' },
+      { file: '02-juan02.txt', path: 'book/juan02.md', title: '卷二 注釋指掌賦', fallbackH1: '六壬指南注解卷二　大六壬九天玄女指掌賦' },
+      { file: '03-juan03.txt', path: 'book/juan03.md', title: '卷三 會纂占驗指南', fallbackH1: '六壬指南注解卷三　大六壬會纂占驗指南' },
+      { file: '04-juan04.txt', path: 'book/juan04.md', title: '卷四 神煞指南', fallbackH1: '六壬指南注解卷之四　大六壬神煞指南' },
+    ],
+  },
 ];
 
 /** 整卷 txt → 典籍 markdown（保守排版；配置来自书目注册表） */
