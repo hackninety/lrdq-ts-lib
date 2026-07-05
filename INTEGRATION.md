@@ -3,7 +3,7 @@
 ## 1. 安装
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.5.0
+npm install github:hackninety/lrdq-ts-lib#v0.6.0
 # 本地开发：npm install file:../lrdq-ts-lib
 ```
 
@@ -31,19 +31,21 @@ export const bifaPlugin: LiuRenPlugin = {
 
 ## 3. 典籍库并册
 
-`getDocsManifest()/getDocMarkdown()` 与 zslj-ts-lib 同形，宿主典籍抽屉合并两库清单。
-**v0.2.0 起典籍走 `lrdq-ts-lib/docs` 子入口**（全书十三篇 ~1MB 文本与检测主入口分包，
-随宿主典籍界面惰性加载，不进主包）：
+**v0.6.0 多书升格**：manifest 携 `book/dynasty`（分组身份从前端下沉到数据），
+`getDocMarkdown` 变**异步**（载荷按书分包，首次访问某书才拉取该书 chunk）。
+宿主抽屉分组读 `manifest[].book`；zslj 等无 book 字段的库用 SOURCES 兜底标签：
 
 ```ts
 import * as zslj from 'zslj-ts-lib';
 import * as lrdq from 'lrdq-ts-lib/docs'; // 注意子入口
 
-const sources = [
-  { lib: 'zslj', title: '占事略決', ...zslj },
-  { lib: 'lrdq', title: '六壬大全', ...lrdq },
+const SOURCES = [
+  { lib: 'zslj', bookFallback: '占事略決', getManifest: zslj.getDocsManifest,
+    getMd: async (p: string) => zslj.getDocMarkdown(p) }, // 同步库包一层
+  { lib: 'lrdq', bookFallback: '六壬大全', getManifest: lrdq.getDocsManifest,
+    getMd: lrdq.getDocMarkdown }, // 已是异步
 ];
-// key 用 `${lib}:${path}` 防路径冲突；getDocMarkdown 按 lib 路由
+// 分组：doc.book ?? source.bookFallback；key 用 `${lib}:${path}` 防路径冲突
 ```
 
 ## 3.5 课体課經原文深链（v0.4.0+）

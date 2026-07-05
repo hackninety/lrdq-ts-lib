@@ -1,28 +1,39 @@
 /**
  * 典籍库子入口 —— `import { getDocsManifest, getDocMarkdown } from 'lrdq-ts-lib/docs'`
  *
- * 《六壬大全》全书十三篇（序 + 卷一~卷十二）随包内置，离线可用。
- * 与检测主入口分包：全书文本体量大，宿主惰性加载典籍界面时才拉取，
- * 主包只背 detectBifa 及其百法语料。
- * 接口与 zslj-ts-lib 同形，宿主典籍库可多库并册。
+ * 多书语料库入口（v0.6.0 起）：本模块只内联轻量 manifest（全库篇目 + book/dynasty），
+ * 各书 markdown 载荷按书分包（src/books/<slug>），`getDocMarkdown` **异步**按
+ * path 的 slug 前缀路由并缓存 —— 宿主打开某书篇目才拉取该书载荷 chunk。
+ * 接口与 zslj-ts-lib 同形程度：getDocsManifest 同步同形；getDocMarkdown 变异步。
  */
-import docsData from './data/docs.json';
+import manifestData from './data/docs-manifest.json';
 import type { DocMeta } from './types';
 
 export type { DocMeta } from './types';
 
-interface DocsShape {
-  manifest: DocMeta[];
-  docs: Record<string, string>;
-}
-const docs = docsData as unknown as DocsShape;
+const manifest = (manifestData as unknown as { manifest: DocMeta[] }).manifest;
 
-/** 典籍文档目录（book=原文十三篇，algorithm=检测口径说明） */
+/** 各书载荷加载器（新书登记于此，与 gen-data CORPUS 对应） */
+const LOADERS: Record<string, () => Promise<{ payload: { docs: Record<string, string> } }>> = {
+  lrdq: () => import('./books/lrdq'),
+};
+
+const cache = new Map<string, Record<string, string>>();
+
+/** 典籍文档目录（全库篇目，含 book/dynasty；轻量，同步） */
 export function getDocsManifest(): DocMeta[] {
-  return docs.manifest;
+  return manifest;
 }
 
-/** 取某篇文档 markdown（path 用 manifest 中的值） */
-export function getDocMarkdown(path: string): string | undefined {
-  return docs.docs[path];
+/** 取某篇文档 markdown（异步：按 path 的书 slug 路由，首次拉取该书载荷并缓存） */
+export async function getDocMarkdown(path: string): Promise<string | undefined> {
+  const slug = path.split('/')[0];
+  let docs = cache.get(slug);
+  if (!docs) {
+    const loader = LOADERS[slug];
+    if (!loader) return undefined;
+    docs = (await loader()).payload.docs;
+    cache.set(slug, docs);
+  }
+  return docs[path];
 }

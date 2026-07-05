@@ -37,20 +37,19 @@
 
 ---
 
-## 1. 升格重构（🚧 阻塞项 —— 第二部书进来前必须先做）
+## 1. 升格重构（✅ v0.6.0 完成 —— 第二部书可直接进场）
 
-现管线全部硬编码大全：`BOOK_PAGES` 数组、`TITLE_RE = /^六壬大全[卷巻]/`、`PROVENANCE`、
-`SECTION_RES` 均为大全专用；"是哪部书"的身份现在来自**前端 `TypikonDrawer.SOURCES` 的
-`book:` 标签**（一库一书），而非 manifest。多书前需：
-
-| # | 改动 | 位置 | 说明 |
+| # | 改动 | 位置 | 状态 |
 |---|---|---|---|
-| 1 | 目录分书 | `docs/book/*` → `docs/corpus/<slug>/{raw,text}` | 大全迁 `corpus/lrdq/`；每书独立底本存档 |
-| 2 | **manifest 加 `book`** | `src/types.ts` `DocMeta` | 增 `book`（典籍名）+ 可选 `dynasty/author`。**"是哪部书"必须从前端 SOURCES 下沉到 manifest**，否则新书全被标成"六壬大全" |
-| 3 | gen-data 书注册表 | `scripts/gen-data.mjs` | 抽出 `CORPUS = [{slug, book, titleRe, sectionRes, provenance, level}]` 循环产出；毕法深度结构化保留为大全专属分支 |
-| 4 | 前端按书分组 | react-liuren `src/components/TypikonDrawer.tsx` | 抽屉分组改读 `manifest[].book`；`getDocMarkdown` 仍按 lib 路由，`key = ${lib}:${path}` 不变 |
-| 5 | **按书分包** | `package.json` exports / docs 子入口 | 单书 docs.json 已 ~1MB，多书须 code-split（`lrdq-ts-lib/docs/<slug>` 子路径，或 manifest-only 入口 + 按篇懒取），避免开抽屉即拉全部语料 |
-| 6 | 元信息 | `package.json` / `README.md` / `INTEGRATION.md` | description/keywords 改语料库口径；`lrdq` 包名沿用（仅作 id，不改） |
+| 1 | 目录分书 | 大全已迁 `docs/corpus/lrdq/{raw,text}`（git mv 保留历史） | ✅ |
+| 2 | **manifest 加 `book`** | `DocMeta = {path, title, group, book, dynasty?, author?}`；path 带 slug 前缀（`lrdq/book/juan01.md`） | ✅ |
+| 3 | gen-data 书注册表 | `CORPUS = [{slug, book, dynasty, textDir, provenance, furnitureRe, titleRe, titleH1, sectionRes, pages}]` 循环产出；毕法/課經/神煞为大全专属深度分支 | ✅ |
+| 4 | 前端按书分组 | TypikonDrawer 分组读 `manifest[].book`（无字段的库用 SOURCES `bookFallback`）；`key = ${lib}:${path}` 不变 | ✅ |
+| 5 | **按书分包** | `docs.ts` = manifest 轻入口（同步）+ `getDocMarkdown` **异步**按 slug 路由缓存；载荷 `src/books/<slug>.ts` 动态导入成独立 chunk（fixEsmImports 已支持动态导入补扩展名） | ✅ |
+| 6 | 元信息 | description/keywords 改语料库口径；`lrdq` 包名沿用作 id | ✅ |
+
+新书落库只需：`docs/corpus/<slug>/` 存底本 → `CORPUS` 登记（titleRe/sectionRes 等）→
+`src/books/<slug>.ts` 载荷包装 + `docs.ts` LOADERS 登记 → 测试与 README 篇目表。
 
 **开放决策 —— 毕法引擎去留**：建议**留在本库**（毕法赋即大全语料，`detectBifa` 与
 `getBifaEntry` 共用 `bifa.json`，且 react-liuren `src/plugins/bifa.ts` 已依赖）。若坚持"纯语料库"，

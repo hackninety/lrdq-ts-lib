@@ -1,18 +1,21 @@
 /**
- * 语料生成：docs/book/text/*.txt（ctext 转录提取稿，13 页全书）
- *   → src/data/bifa.json  （《畢法賦》百法：编号/格名/赋句/注文/附属格）
- *   → src/data/docs.json  （典籍库 markdown：序 + 卷一~卷十二 + docs/algorithm/*.md）
+ * 语料生成（大六壬典籍语料库；书目见 CORPUS 注册表）
+ *   docs/corpus/<slug>/text/*.txt（转录提取稿）
+ *   → src/data/docs-manifest.json （全库篇目：path 带 slug 前缀，携 book/dynasty）
+ *   → src/data/docs-<slug>.json   （每书 markdown 载荷，按书分包懒加载）
+ *   → src/data/bifa.json / keju.json / shensha.json（《六壬大全》深度结构化分支）
  *
- * 底本：欽定四庫全書本《六壬大全》（ctext.org wiki res=260435）。
- * 卷十一/十二《畢法賦》做深度结构化；其余各卷整卷典籍化（只做高置信排版）。
- * 转录笔误（如正文「第五十一法…第五十三法」重出）按序位归正，并记入 textualIssues。
+ * 首册：欽定四庫全書本《六壬大全》（ctext.org wiki res=260435）。
+ * 卷十一/十二《畢法賦》、卷七~十《課經》、卷一神煞做深度结构化；其余整卷典籍化。
+ * 转录笔误按序位归正或照录，记入各 textualIssues，不静默改字。
  */
 import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const textDir = path.join(root, 'docs/book/text');
+// 《六壬大全》底本提取稿（深度结构化分支：毕法/課經/神煞 皆取此）
+const textDir = path.join(root, 'docs/corpus/lrdq/text');
 const outDir = path.join(root, 'src/data');
 mkdirSync(outDir, { recursive: true });
 
@@ -217,61 +220,94 @@ const BOOK_PAGES = [
   { file: '10-juan10.txt', path: 'book/juan10.md', title: '卷十 課經集四' },
 ];
 
-/** 整卷 txt → 典籍 markdown（保守排版） */
-function juanToMd(page) {
+// ---------- 语料库书目注册表（新书在此登记：整卷典籍化即配即产；深度结构化另开分支） ----------
+const CORPUS = [
+  {
+    slug: 'lrdq',
+    book: '六壬大全',
+    dynasty: '明',
+    textDir,
+    provenance: PROVENANCE,
+    furnitureRe: FURNITURE_RE,
+    titleRe: TITLE_RE,
+    titleH1: (m) => `六壬大全卷${m[1]}　${m[2].trim()}`,
+    sectionRes: SECTION_RES,
+    pages: BOOK_PAGES,
+  },
+];
+
+/** 整卷 txt → 典籍 markdown（保守排版；配置来自书目注册表） */
+function juanToMd(page, bk) {
   const body = [];
   let h1 = null;
   let sections = 0;
-  for (const line of read(page.file)) {
-    if (FURNITURE_RE.test(line)) continue;
+  const lines = readFileSync(path.join(bk.textDir, page.file), 'utf8')
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    if (bk.furnitureRe.test(line)) continue;
     if (!h1) {
-      const t = line.match(TITLE_RE);
+      const t = line.match(bk.titleRe);
       if (t) {
-        h1 = `六壬大全卷${t[1]}　${t[2].trim()}`;
+        h1 = bk.titleH1(t);
         continue;
       }
     }
-    if (SECTION_RES.some((re) => re.test(line))) {
+    if (bk.sectionRes.some((re) => re.test(line))) {
       body.push(`## ${line}`);
       sections++;
       continue;
     }
     body.push(line);
   }
-  h1 ??= page.fallbackH1; // 序无卷题行；卷四底本缺卷题行
+  h1 ??= page.fallbackH1; // 序无卷题行；大全卷四底本缺卷题行
   if (!h1) throw new Error(`✗ ${page.file} 未识别卷题且无 fallback`);
-  return { md: [`# ${h1}`, '', PROVENANCE, '', body.join('\n\n')].join('\n'), sections };
+  return { md: [`# ${h1}`, '', bk.provenance, '', body.join('\n\n')].join('\n'), sections };
 }
 
 const manifest = [];
-const docs = {};
-for (const p of BOOK_PAGES) {
-  const { md, sections } = juanToMd(p);
-  manifest.push({ path: p.path, title: p.title, group: 'book' });
-  docs[p.path] = md;
-  console.log(`${p.path}: ${(md.length / 1024).toFixed(0)}KB，小节 ${sections}`);
+const docsBySlug = {};
+for (const bk of CORPUS) {
+  const docs = (docsBySlug[bk.slug] ??= {});
+  for (const p of bk.pages) {
+    const { md, sections } = juanToMd(p, bk);
+    const full = `${bk.slug}/${p.path}`;
+    manifest.push({ path: full, title: p.title, group: 'book', book: bk.book, dynasty: bk.dynasty });
+    docs[full] = md;
+    console.log(`${full}: ${(md.length / 1024).toFixed(0)}KB，小节 ${sections}`);
+  }
 }
-manifest.push({ path: 'book/juan11.md', title: '卷十一 畢法賦上', group: 'book' });
-manifest.push({ path: 'book/juan12.md', title: '卷十二 畢法賦下', group: 'book' });
-docs['book/juan11.md'] = juan11Md;
-docs['book/juan12.md'] = juan12Md;
 
+// 畢法賦上下（深度结构化产物，大全专属分支）
+const lrdqMeta = { group: 'book', book: '六壬大全', dynasty: '明' };
+manifest.push({ path: 'lrdq/book/juan11.md', title: '卷十一 畢法賦上', ...lrdqMeta });
+manifest.push({ path: 'lrdq/book/juan12.md', title: '卷十二 畢法賦下', ...lrdqMeta });
+docsBySlug.lrdq['lrdq/book/juan11.md'] = juan11Md;
+docsBySlug.lrdq['lrdq/book/juan12.md'] = juan12Md;
+
+// 检测口径说明（挂大全册）
 const algoDir = path.join(root, 'docs/algorithm');
 if (existsSync(algoDir)) {
   for (const f of readdirSync(algoDir).filter((f) => f.endsWith('.md'))) {
     const md = readFileSync(path.join(algoDir, f), 'utf8');
     const title = (md.match(/^#\s+(.+)$/m) || [])[1] ?? f;
-    manifest.push({ path: `algorithm/${f}`, title, group: 'algorithm' });
-    docs[`algorithm/${f}`] = md;
+    manifest.push({ path: `lrdq/algorithm/${f}`, title, group: 'algorithm', book: '六壬大全', dynasty: '明' });
+    docsBySlug.lrdq[`lrdq/algorithm/${f}`] = md;
   }
 }
-writeFileSync(path.join(outDir, 'docs.json'), JSON.stringify({ manifest, docs }, null, 1), 'utf8');
+writeFileSync(path.join(outDir, 'docs-manifest.json'), JSON.stringify({ manifest }, null, 1), 'utf8');
+for (const [slug, docs] of Object.entries(docsBySlug)) {
+  writeFileSync(path.join(outDir, `docs-${slug}.json`), JSON.stringify({ docs }, null, 1), 'utf8');
+}
 
 console.log(`bifa.json: ${entries.length} 法；无注文: [${noNote.join(',') || '无'}]`);
 console.log(`附属格总数: ${entries.reduce((s, e) => s + e.extras.length, 0)}`);
 console.log(`textualIssues: ${textualIssues.length} 条`);
 if (diagnostics.unmatchedHeaders.length) console.log('未匹配标头:', diagnostics.unmatchedHeaders);
-console.log(`docs.json: ${manifest.length} 篇`);
+console.log(
+  `docs-manifest.json: ${manifest.length} 篇；载荷 ${Object.keys(docsBySlug).map((s) => `docs-${s}.json`).join('、')}`,
+);
 
 // ---------- 課經（卷七~卷十）：深度结构化 ----------
 // 每个「XX課」独行节题起一条，正文逐行收录；卷九「三交課」底本重出两节，照收。

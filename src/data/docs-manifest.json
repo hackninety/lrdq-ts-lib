@@ -1,0 +1,102 @@
+{
+ "manifest": [
+  {
+   "path": "lrdq/book/xu.md",
+   "title": "提要（四庫總目）",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan01.md",
+   "title": "卷一 起例",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan02.md",
+   "title": "卷二 神將釋",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan03.md",
+   "title": "卷三 歌賦",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan04.md",
+   "title": "卷四 歌賦（續）",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan05.md",
+   "title": "卷五 兵占",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan06.md",
+   "title": "卷六 宿度分野",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan07.md",
+   "title": "卷七 課經集一",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan08.md",
+   "title": "卷八 課經集二",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan09.md",
+   "title": "卷九 課經集三",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan10.md",
+   "title": "卷十 課經集四",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan11.md",
+   "title": "卷十一 畢法賦上",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/book/juan12.md",
+   "title": "卷十二 畢法賦下",
+   "group": "book",
+   "book": "六壬大全",
+   "dynasty": "明"
+  },
+  {
+   "path": "lrdq/algorithm/bifa-detect.md",
+   "title": "畢法百法 · 检测口径说明",
+   "group": "algorithm",
+   "book": "六壬大全",
+   "dynasty": "明"
+  }
+ ]
+}

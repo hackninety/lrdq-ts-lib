@@ -75,9 +75,15 @@ export interface BifaHit {
   why: string;
 }
 
-/** 典籍文档元信息（与 zslj-ts-lib 同形，便于宿主典籍库合并） */
+/** 典籍文档元信息（多书语料库：path 带书 slug 前缀，book 标识典籍名） */
 export interface DocMeta {
+  /** `<slug>/<group>/<file>.md`（如 lrdq/book/juan01.md） */
   path: string;
   title: string;
+  /** book=原文，algorithm=检测口径说明 */
   group: string;
+  /** 典籍名（宿主抽屉分组依据），如「六壬大全」 */
+  book: string;
+  dynasty?: string;
+  author?: string;
 }

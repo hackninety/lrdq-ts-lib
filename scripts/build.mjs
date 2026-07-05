@@ -32,6 +32,12 @@ function fixEsmImports(dir) {
       (m, kw, q1, spec, q2) =>
         /\.(js|json|mjs|cjs)$/.test(spec) ? m : `${kw}${q1}${spec}.js${q2}`,
     );
+    // 动态导入（按书分包的载荷模块）同样补扩展名
+    code = code.replace(
+      /(\bimport\s*\(\s*)(['"])(\.\.?\/[^'"]+)(['"])/g,
+      (m, kw, q1, spec, q2) =>
+        /\.(js|json|mjs|cjs)$/.test(spec) ? m : `${kw}${q1}${spec}.js${q2}`,
+    );
     code = code.replace(
       /(\bfrom\s*)(['"])(\.\.?\/[^'"]+\.json)(['"])(?!\s*with)/g,
       (m, kw, q1, spec, q2) => `${kw}${q1}${spec}${q2} with { type: 'json' }`,
