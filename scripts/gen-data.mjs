@@ -272,3 +272,166 @@ console.log(`附属格总数: ${entries.reduce((s, e) => s + e.extras.length, 0)
 console.log(`textualIssues: ${textualIssues.length} 条`);
 if (diagnostics.unmatchedHeaders.length) console.log('未匹配标头:', diagnostics.unmatchedHeaders);
 console.log(`docs.json: ${manifest.length} 篇`);
+
+// ---------- 課經（卷七~卷十）：深度结构化 ----------
+// 每个「XX課」独行节题起一条，正文逐行收录；卷九「三交課」底本重出两节，照收。
+{
+  // 6 字上限与整卷典籍化口径一致；卷七「順/逆連茹三奇十二課」（8 字）为三奇課内子表头，非独立节
+  const KE_HEAD_RE = /^[^，。；：、？！\s　]{1,6}課$/;
+  const KEJU_FILES = [
+    ['07-juan07.txt', 7],
+    ['08-juan08.txt', 8],
+    ['09-juan09.txt', 9],
+    ['10-juan10.txt', 10],
+  ];
+  const keJing = [];
+  let orphan = 0;
+  for (const [file, juan] of KEJU_FILES) {
+    let cur = null;
+    for (const line of read(file)) {
+      if (FURNITURE_RE.test(line) || TITLE_RE.test(line)) continue;
+      if (KE_HEAD_RE.test(line)) {
+        cur = { name: line.replace(/課$/, ''), juan, order: keJing.length + 1, text: [] };
+        keJing.push(cur);
+        continue;
+      }
+      if (cur) cur.text.push(line);
+      else orphan++;
+    }
+  }
+  if (keJing.length !== 70) {
+    console.error(`✗ 課經节数 ${keJing.length} ≠ 70`);
+    process.exit(1);
+  }
+  const empty = keJing.filter((e) => !e.text.length);
+  if (empty.length) {
+    console.error('✗ 課經空节:', empty.map((e) => e.name));
+    process.exit(1);
+  }
+  writeFileSync(
+    path.join(outDir, 'keju.json'),
+    JSON.stringify(
+      {
+        source: '欽定四庫全書本《六壬大全》卷七~卷十《課經集》（ctext.org wiki res=260435 转录）',
+        entries: keJing.map((e) => ({ name: e.name, juan: e.juan, order: e.order, text: e.text.join('\n\n') })),
+      },
+      null,
+      1,
+    ),
+    'utf8',
+  );
+  console.log(`keju.json: ${keJing.length} 节${orphan ? `（节前散行 ${orphan}）` : ''}`);
+}
+
+// ---------- 神煞（卷一）：三表映射化 + 月令杂列保守解析 ----------
+// 歲神煞（年支 12 值）／十天干神煞（日干 10 值）／十二地支神煞（日支 12 值）：
+//   「名 + 值串 [+ 尾注]」提为映射，非值串行保留为规则条。
+// 月令杂列块（无分隔符混排）：严格「2 字名 + 12 支连串」才提按月映射，
+//   其余整行列存（rule 含全行原文，name 仅作索引提示）；断行按「…在$」拼接。
+{
+  const ZHI12 = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const GAN10 = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  const YUE12 = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  const ZHI_SET = new Set(ZHI12);
+  const ssIssues = [];
+  const lines = read('01-juan01.txt');
+  const idxOf = (s) => lines.findIndex((l) => l === s);
+  const iSui = idxOf('歲神煞');
+  const iGan = idxOf('十天干神煞');
+  const iZhi = idxOf('十二地支神煞');
+  const iZa = idxOf('內天罡行十二經絡');
+  const iZaEnd = lines.findIndex((l, i) => i > iZa && /^正月$/.test(l));
+  if ([iSui, iGan, iZhi, iZa].some((i) => i < 0) || iZaEnd < 0) {
+    console.error('✗ 卷一神煞分节定位失败');
+    process.exit(1);
+  }
+
+  const zhiRun = (s) => {
+    let r = '';
+    for (const ch of s) {
+      if (ZHI_SET.has(ch)) r += ch;
+      else break;
+    }
+    return r;
+  };
+  const toMap = (keys, run) => Object.fromEntries(keys.map((k, i) => [k, run[i]]));
+
+  /** 表区解析：键头行跳过；名+值串→映射；其余规则条；无名短行并入上一条 */
+  function parseTable(slice, keys, expect) {
+    const out = [];
+    for (const line of slice) {
+      if (/^[子丑寅卯辰巳午未申酉戌亥]{10,12}$/.test(line) || /^[甲乙丙丁戊己巳庚辛壬癸]{9,10}$/.test(line)) continue;
+      const m = line.match(/^(\S{2,6}?)[\s　：:]+(.*)$/);
+      if (!m) {
+        const prev = out[out.length - 1];
+        if (prev && (prev.rule === '' || line.length < 16)) {
+          prev.note = `${prev.note ?? ''}${prev.note ? '\n' : ''}${line}`;
+        } else {
+          out.push({ name: line.slice(0, 2), rule: line });
+        }
+        continue;
+      }
+      const rest = m[2];
+      const run = zhiRun(rest);
+      if (run.length === expect && !ZHI_SET.has(rest[expect] ?? '')) {
+        const note = rest.slice(expect).trim();
+        out.push({ name: m[1], map: toMap(keys, run), ...(note ? { note } : {}) });
+      } else {
+        out.push({ name: m[1], rule: rest });
+      }
+    }
+    return out;
+  }
+
+  // 月令杂列：断行拼接（行尾「在/為/得/加/乘/臨/與」视为断条）
+  const zaRaw = lines.slice(iZa, iZaEnd);
+  const zaJoined = [];
+  for (let i = 0; i < zaRaw.length; i++) {
+    let l = zaRaw[i];
+    while (/[在為得加乘臨與]$/.test(l) && i + 1 < zaRaw.length) l += zaRaw[++i];
+    zaJoined.push(l);
+  }
+  const zaEntries = [];
+  for (const line of zaJoined) {
+    const comp = line.match(/^([^\s，。；：、]{2}、[^\s，。；：、]{2})/);
+    const name = comp ? comp[1] : line.slice(0, 2);
+    const rest = comp ? line.slice(comp[1].length) : line.slice(2);
+    const run = zhiRun(rest);
+    if (!comp && run.length === 12 && !ZHI_SET.has(rest[12] ?? '')) {
+      const note = rest.slice(12).trim();
+      zaEntries.push({ name, map: toMap(YUE12, run), ...(note ? { note } : {}) });
+    } else {
+      zaEntries.push({ name, rule: line });
+    }
+  }
+  if (lines.slice(iGan, iZhi).includes('甲乙丙丁戊巳庚辛壬癸')) {
+    ssIssues.push('十天干神煞表头「戊巳庚」之「巳」为「己」之误，按十干序归正');
+  }
+  if (zaJoined.some((l) => l.startsWith('聖心'))) {
+    ssIssues.push('「聖心」行含「己」疑为「巳」之讹，未改字，整行列存为规则条');
+  }
+
+  const sections = [
+    { id: 'sui', section: '歲神煞', basis: '年支', keys: ZHI12, entries: parseTable(lines.slice(iSui + 1, iGan), ZHI12, 12) },
+    { id: 'gan', section: '十天干神煞', basis: '日干', keys: GAN10, entries: parseTable(lines.slice(iGan + 1, iZhi), GAN10, 10) },
+    { id: 'zhi', section: '十二地支神煞', basis: '日支', keys: ZHI12, entries: parseTable(lines.slice(iZhi + 1, iZa), ZHI12, 12) },
+    { id: 'yue', section: '月令雜列神煞', basis: '月（正~十二）', keys: YUE12, entries: zaEntries },
+  ];
+  writeFileSync(
+    path.join(outDir, 'shensha.json'),
+    JSON.stringify(
+      {
+        source: '欽定四庫全書本《六壬大全》卷一（ctext.org wiki res=260435 转录）',
+        sections,
+        textualIssues: ssIssues,
+      },
+      null,
+      1,
+    ),
+    'utf8',
+  );
+  for (const s of sections) {
+    const maps = s.entries.filter((e) => e.map).length;
+    console.log(`shensha/${s.id}: ${s.entries.length} 条（映射 ${maps}，规则 ${s.entries.length - maps}）`);
+  }
+}

@@ -3,7 +3,7 @@
 ## 1. 安装
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.3.0
+npm install github:hackninety/lrdq-ts-lib#v0.4.0
 # 本地开发：npm install file:../lrdq-ts-lib
 ```
 
@@ -45,6 +45,18 @@ const sources = [
 ];
 // key 用 `${lib}:${path}` 防路径冲突；getDocMarkdown 按 lib 路由
 ```
+
+## 3.5 课体課經原文深链（v0.4.0+）
+
+三传面板的课体/课体细分名可深链《課經》原文。**动态导入**保持主包干净：
+
+```ts
+const names = [chart.sanChuan.keTi, chart.sanChuan.method, ...subTypes];
+const { findKeJing } = await import('lrdq-ts-lib/keju'); // 独立 chunk
+const entries = findKeJing(names); // 折叠匹配（剋/克、繁简、課后缀）
+```
+
+神煞映射同理走 `lrdq-ts-lib/shensha`（`shenShaValue('日祿','甲') → ['寅']`）。
 
 ## 4. MD 导出
 
