@@ -44,6 +44,13 @@ export interface BifaChartInput {
     yueJiang?: string;
     dayNight?: string;
   };
+  /** 占人年命（可选；缺省时年命类法静默跳过，如第56法天网自裹） */
+  nianMing?: {
+    /** 本命支（生年支） */
+    benMing?: string;
+    /** 行年支 */
+    xingNian?: string;
+  };
   /** 十二宫（0=子 … 11=亥），缺省时跳过依赖天地盘的格 */
   gong?: { diZhi: string; tianZhi: string; tianJiang?: string; dunGan?: string }[];
   /** 四课（一课干上 → 四课支阴） */

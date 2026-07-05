@@ -3,7 +3,7 @@
 ## 1. 安装
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.2.0
+npm install github:hackninety/lrdq-ts-lib#v0.3.0
 # 本地开发：npm install file:../lrdq-ts-lib
 ```
 

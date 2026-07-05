@@ -10,7 +10,7 @@ import bifaData from './data/bifa.json';
 import type { BifaEntry } from './types';
 
 export * from './types';
-export { detectBifa, DETECTOR_NOS } from './detect';
+export { detectBifa, DETECTOR_NOS, UNDETECTABLE_NOS } from './detect';
 export { normalizeTianJiang, liuQinOf } from './normalize';
 
 interface BifaCorpus {

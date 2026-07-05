@@ -4,8 +4,9 @@
 
 - **语料**：卷十一/十二《畢法賦》全量结构化 —— 百法（编号/格名/赋句/注文/204 附属格），
   底本笔误按序归正并记录 `textualIssues`
-- **检测**：`detectBifa(chart)` 对排盘结果做毕法格局命中（首批 23 法，exact/approx 分级，
-  详见 `docs/algorithm/bifa-detect.md`）
+- **检测**：`detectBifa(chart)` 对排盘结果做毕法格局命中（**97/100 法**，exact/approx 分级；
+  第 93/97/98 法为起传校勘与断法方法论，不设检测器，见 `UNDETECTABLE_NOS` 与
+  `docs/algorithm/bifa-detect.md`）；可选 `nianMing` 输入启用年命类法（第 56 法等）
 - **典籍**：全书十三篇（序 + 卷一~卷十二）随包内置，`lrdq-ts-lib/docs` 子入口输出
   可渲染 markdown（与 zslj-ts-lib 同形，宿主典籍库可直接并册）；与检测主入口分包，
   宿主主包不背整部书卷
@@ -14,7 +15,7 @@
 ## 安装与使用
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.2.0
+npm install github:hackninety/lrdq-ts-lib#v0.3.0
 ```
 
 ```ts
@@ -57,5 +58,4 @@ ctext.org wiki（res=260435）四庫全書本《六壬大全》转录，全书 1
 
 ## 后续计划
 
-- 分批扩充检测覆盖（77 法待实现）
 - 課經七百二十课、神煞表等深度结构化（当前为整卷典籍化）
