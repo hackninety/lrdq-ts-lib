@@ -3,7 +3,7 @@
 ## 1. 安装
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.1.0
+npm install github:hackninety/lrdq-ts-lib#v0.2.0
 # 本地开发：npm install file:../lrdq-ts-lib
 ```
 
@@ -31,11 +31,13 @@ export const bifaPlugin: LiuRenPlugin = {
 
 ## 3. 典籍库并册
 
-`getDocsManifest()/getDocMarkdown()` 与 zslj-ts-lib 同形，宿主典籍抽屉合并两库清单：
+`getDocsManifest()/getDocMarkdown()` 与 zslj-ts-lib 同形，宿主典籍抽屉合并两库清单。
+**v0.2.0 起典籍走 `lrdq-ts-lib/docs` 子入口**（全书十三篇 ~1MB 文本与检测主入口分包，
+随宿主典籍界面惰性加载，不进主包）：
 
 ```ts
 import * as zslj from 'zslj-ts-lib';
-import * as lrdq from 'lrdq-ts-lib';
+import * as lrdq from 'lrdq-ts-lib/docs'; // 注意子入口
 
 const sources = [
   { lib: 'zslj', title: '占事略決', ...zslj },

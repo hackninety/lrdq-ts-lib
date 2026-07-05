@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bifa, detectBifa, getBifaEntry, getDocsManifest, getDocMarkdown, normalizeTianJiang } from '../index';
+import { bifa, detectBifa, getBifaEntry, normalizeTianJiang } from '../index';
 import type { BifaChartInput } from '../types';
 
 /** 构造最小检测输入（默认甲子日、丙午年、四课上神与三传可覆盖） */
@@ -42,13 +42,6 @@ describe('语料完整性', () => {
   });
   it('注文覆盖：每法皆有注', () => {
     expect(bifa.entries.filter((e) => !e.note).map((e) => e.no)).toEqual([]);
-  });
-  it('典籍文档导出可用', () => {
-    const m = getDocsManifest();
-    expect(m.length).toBeGreaterThanOrEqual(2);
-    const md = getDocMarkdown('book/juan11.md');
-    expect(md).toContain('《六壬畢法》正文');
-    expect(md).toContain('第1法');
   });
 });
 
