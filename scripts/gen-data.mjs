@@ -417,12 +417,66 @@ console.log(`docs.json: ${manifest.length} 篇`);
     { id: 'zhi', section: '十二地支神煞', basis: '日支', keys: ZHI12, entries: parseTable(lines.slice(iZhi + 1, iZa), ZHI12, 12) },
     { id: 'yue', section: '月令雜列神煞', basis: '月（正~十二）', keys: YUE12, entries: zaEntries },
   ];
+
+  // ---------- 逐月神煞（正月~十二月立成）：每月十二宫，支行上栏＋续行下栏 ----------
+  // 栏别依底本版面（通行立成表式上吉下凶），内容逐字照收；连书未分名照录并记校记。
+  const iZong = lines.findIndex((l) => l === '總鈐');
+  const mIdx = YUE12.map((m) => lines.findIndex((l) => l === m));
+  if (iZong < 0 || mIdx.some((i) => i < 0) || mIdx.some((v, i) => i > 0 && v <= mIdx[i - 1]) || mIdx[11] >= iZong) {
+    console.error('✗ 逐月神煞分块定位失败');
+    process.exit(1);
+  }
+  const monthly = [];
+  const fusedTokens = [];
+  for (let mi = 0; mi < 12; mi++) {
+    const end = mi < 11 ? mIdx[mi + 1] : iZong;
+    const gong = [];
+    let cur = null;
+    for (let i = mIdx[mi] + 1; i < end; i++) {
+      const line = lines[i];
+      const bare = line.match(/^([子丑寅卯辰巳午未申酉戌亥])$/);
+      const bm = line.match(/^([子丑寅卯辰巳午未申酉戌亥])[\s　]+(.+)$/);
+      if (bare || bm) {
+        cur = { zhi: (bare ?? bm)[1], ji: bm ? bm[2].split(/[\s　]+/).filter(Boolean) : [], xiong: [] };
+        gong.push(cur);
+      } else if (cur) {
+        cur.xiong.push(...line.split(/[\s　]+/).filter(Boolean));
+      } else {
+        console.error(`✗ ${YUE12[mi]}块支行前出现散行: ${line.slice(0, 20)}`);
+        process.exit(1);
+      }
+    }
+    if (gong.length !== 12 || gong.some((g, i) => g.zhi !== ZHI12[i])) {
+      console.error(`✗ ${YUE12[mi]}宫数/支序异常: ${gong.map((g) => g.zhi).join('')}`);
+      process.exit(1);
+    }
+    for (const g of gong) {
+      for (const t of [...g.ji, ...g.xiong]) {
+        if (t.length >= 4) fusedTokens.push(`${YUE12[mi]}${g.zhi}宫「${t}」`);
+      }
+    }
+    monthly.push({ month: YUE12[mi], gong });
+  }
+  if (fusedTokens.length) {
+    ssIssues.push(`逐月神煞有连书未分名 ${fusedTokens.length} 处（照录未拆）：${fusedTokens.join('、')}`);
+  }
+  // 生氣系列自检：与「月支后二辰」通行公式比对，偏差照录并记校记
+  const JIAN12 = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+  monthly.forEach((m, i) => {
+    const at = m.gong.find((g) => g.ji.includes('生氣') || g.xiong.includes('生氣'))?.zhi;
+    const exp = ZHI12[(ZHI12.indexOf(JIAN12[i]) + 10) % 12];
+    if (at && at !== exp) {
+      ssIssues.push(`逐月神煞${m.month}「生氣」落${at}，依月支后二辰序当在${exp}，照录未改`);
+    }
+  });
+
   writeFileSync(
     path.join(outDir, 'shensha.json'),
     JSON.stringify(
       {
         source: '欽定四庫全書本《六壬大全》卷一（ctext.org wiki res=260435 转录）',
         sections,
+        monthly,
         textualIssues: ssIssues,
       },
       null,
@@ -434,4 +488,6 @@ console.log(`docs.json: ${manifest.length} 篇`);
     const maps = s.entries.filter((e) => e.map).length;
     console.log(`shensha/${s.id}: ${s.entries.length} 条（映射 ${maps}，规则 ${s.entries.length - maps}）`);
   }
+  const nShen = monthly.reduce((s, m) => s + m.gong.reduce((a, g) => a + g.ji.length + g.xiong.length, 0), 0);
+  console.log(`shensha/monthly: 12 月 × 12 宫，神煞落位 ${nShen} 处；连书 ${fusedTokens.length} 处`);
 }

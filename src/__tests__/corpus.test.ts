@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { findKeJing, foldKeName, getKeJing, getKeJingEntry } from '../keju';
-import { findShenSha, getShenShaIssues, getShenShaSections, shenShaValue } from '../shensha';
+import {
+  findMonthlyShenSha, findShenSha, getMonthlyShenSha, getShenShaIssues,
+  getShenShaSections, monthlyAt, shenShaValue,
+} from '../shensha';
+import { nextZhi, ZHI } from '../normalize';
 
 describe('課經深度结构化（卷七~卷十）', () => {
   const all = getKeJing();
@@ -86,5 +90,63 @@ describe('神煞表结构化（卷一）', () => {
     const issues = getShenShaIssues();
     expect(issues.some((s) => s.includes('戊巳庚'))).toBe(true);
     expect(issues.some((s) => s.includes('聖心'))).toBe(true);
+  });
+});
+
+describe('逐月神煞立成（卷一）', () => {
+  const YUE12 = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  const monthly = getMonthlyShenSha();
+
+  it('十二月 × 十二宫齐全且支序一致', () => {
+    expect(monthly.map((m) => m.month)).toEqual(YUE12);
+    for (const m of monthly) {
+      expect(m.gong.map((g) => g.zhi)).toEqual([...ZHI]);
+    }
+  });
+
+  it('正月子宫：上栏生氣、下栏災煞', () => {
+    const g = monthlyAt('正月', '子')!;
+    expect(g.ji).toContain('生氣');
+    expect(g.xiong).toContain('災煞');
+  });
+
+  it('生氣逐月落宫与「月支后二辰」公式互证（八月底本落午为已档偏差）', () => {
+    const JIAN = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+    const byMonth = Object.fromEntries(
+      findMonthlyShenSha('生氣').filter((s) => s.side === 'ji').map((s) => [s.month, s.zhi]),
+    );
+    YUE12.forEach((m, i) => {
+      if (m === '八月') return;
+      expect(byMonth[m], m).toBe(nextZhi(JIAN[i], -2));
+    });
+    // 底本八月「生氣」落午（依序当在未），照录且校记有档
+    expect(byMonth['八月']).toBe('午');
+    expect(getShenShaIssues().some((s) => s.includes('八月') && s.includes('生氣'))).toBe(true);
+  });
+
+  it('天喜四季落宫与杂列「春戌夏丑秋辰冬未」互证', () => {
+    const byMonth = Object.fromEntries(findMonthlyShenSha('天喜').map((s) => [s.month, s.zhi]));
+    expect(byMonth['正月']).toBe('戌');
+    expect(byMonth['四月']).toBe('丑');
+    expect(byMonth['七月']).toBe('辰');
+    expect(byMonth['十月']).toBe('未');
+  });
+
+  it('驛馬正月在申宫上栏（寅月三合马）', () => {
+    expect(monthlyAt('正月', '申')?.ji).toContain('驛馬');
+  });
+
+  it('连书未分名照录并记校记', () => {
+    expect(getShenShaIssues().some((s) => s.includes('连书'))).toBe(true);
+  });
+});
+
+describe('毕法課名与課經互链（同步守卫）', () => {
+  it('第99法吉课名/第100法凶课名在課經皆有其节', () => {
+    const ji99 = ['龍德', '鑄印', '軒蓋', '斫輪', '官爵', '富貴', '三光', '三陽', '三奇', '時泰'];
+    const xiong100 = ['天禍', '天獄', '天寇', '天網', '魄化', '二煩'];
+    for (const n of [...ji99, ...xiong100]) {
+      expect(getKeJingEntry(n), n).toBeDefined();
+    }
   });
 });

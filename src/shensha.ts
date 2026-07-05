@@ -28,9 +28,26 @@ export interface ShenShaSection {
   entries: ShenShaEntry[];
 }
 
+/** 逐月立成单宫：栏别依底本版面（通行立成表式上吉下凶），内容逐字照收 */
+export interface MonthlyGong {
+  zhi: string;
+  /** 上栏（吉神栏） */
+  ji: string[];
+  /** 下栏（凶神栏） */
+  xiong: string[];
+}
+
+export interface MonthlyShenSha {
+  /** 正月~十二月 */
+  month: string;
+  /** 十二宫（子~亥序） */
+  gong: MonthlyGong[];
+}
+
 interface ShenShaShape {
   source: string;
   sections: ShenShaSection[];
+  monthly: MonthlyShenSha[];
   textualIssues: string[];
 }
 const data = shenShaData as unknown as ShenShaShape;
@@ -61,4 +78,26 @@ export function shenShaValue(name: string, key: string): string[] {
   return findShenSha(name)
     .map(({ entry }) => entry.map?.[key])
     .filter((v): v is string => !!v);
+}
+
+/** 逐月神煞立成（正月~十二月 × 十二宫） */
+export function getMonthlyShenSha(): MonthlyShenSha[] {
+  return data.monthly;
+}
+
+/** 某月某宫的上/下栏神煞 */
+export function monthlyAt(month: string, zhi: string): MonthlyGong | undefined {
+  return data.monthly.find((m) => m.month === month)?.gong.find((g) => g.zhi === zhi);
+}
+
+/** 反查某神煞逐月落宫（side: ji=上栏／xiong=下栏） */
+export function findMonthlyShenSha(name: string): { month: string; zhi: string; side: 'ji' | 'xiong' }[] {
+  const out: { month: string; zhi: string; side: 'ji' | 'xiong' }[] = [];
+  for (const m of data.monthly) {
+    for (const g of m.gong) {
+      if (g.ji.includes(name)) out.push({ month: m.month, zhi: g.zhi, side: 'ji' });
+      if (g.xiong.includes(name)) out.push({ month: m.month, zhi: g.zhi, side: 'xiong' });
+    }
+  }
+  return out;
 }
