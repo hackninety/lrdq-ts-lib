@@ -1,0 +1,56 @@
+# react-liuren 接入指南 —— 《畢法賦》命中插件 + 典籍并册
+
+## 1. 安装
+
+```bash
+npm install github:hackninety/lrdq-ts-lib#v0.1.0
+# 本地开发：npm install file:../lrdq-ts-lib
+```
+
+## 2. 毕法命中插件 `src/plugins/bifa.ts`
+
+`detectBifa` 的输入与统一模型 `LiuRenChart` 结构兼容，直接传入即可：
+
+```ts
+import { detectBifa } from 'lrdq-ts-lib';
+import type { LiuRenPlugin } from './types';
+
+export const bifaPlugin: LiuRenPlugin = {
+  id: 'bifa',
+  title: '毕法赋',
+  description: '《畢法賦》百法格局命中（六壬大全卷十一/十二）',
+  compute(chart) {
+    const hits = detectBifa(chart);
+    return hits.length ? hits : undefined; // 挂 extras.bifa
+  },
+};
+```
+
+在 `plugins/index.ts` 注册后，UI（如 SanChuanPanel）读取 `chart.extras.bifa`
+渲染命中列表（`{no,name,fu,certainty,why}[]`）。
+
+## 3. 典籍库并册
+
+`getDocsManifest()/getDocMarkdown()` 与 zslj-ts-lib 同形，宿主典籍抽屉合并两库清单：
+
+```ts
+import * as zslj from 'zslj-ts-lib';
+import * as lrdq from 'lrdq-ts-lib';
+
+const sources = [
+  { lib: 'zslj', title: '占事略決', ...zslj },
+  { lib: 'lrdq', title: '六壬大全', ...lrdq },
+];
+// key 用 `${lib}:${path}` 防路径冲突；getDocMarkdown 按 lib 路由
+```
+
+## 4. MD 导出
+
+`chartToMarkdown` 增加「毕法命中」段：`- 第N法 {fu}（确判/近似）— {why}`。
+
+## 注意
+
+- 检测覆盖为首批 23 法（见 `docs/algorithm/bifa-detect.md`），其余以语料收录，
+  UI 建议标注「首批 23/100」以免误解为全量判定
+- 毕法为明清通行体系断法汇编，与占事略決古法体系相互独立；对占事略決引擎的
+  盘面命中仅供跨流派参考

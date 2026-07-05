@@ -1,0 +1,41 @@
+{
+  "name": "lrdq-ts-lib",
+  "version": "0.1.0",
+  "description": "《六壬大全》（明·四庫全書本）典籍库与《畢法賦》百法命中检测引擎 — LiuRen DaQuan corpus & BiFa-100 pattern detector",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "INTEGRATION.md"
+  ],
+  "scripts": {
+    "gen": "node scripts/gen-data.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "liuren",
+    "六壬",
+    "六壬大全",
+    "毕法赋",
+    "畢法賦",
+    "divination"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
+  }
+}
