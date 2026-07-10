@@ -702,3 +702,163 @@ console.log(
   const nShen = monthly.reduce((s, m) => s + m.gong.reduce((a, g) => a + g.ji.length + g.xiong.length, 0), 0);
   console.log(`shensha/monthly: 12 月 × 12 宫，神煞落位 ${nShen} 处；连书 ${fusedTokens.length} 处`);
 }
+
+// ---------- 占例库（《六壬指南注解》卷三）：编号占驗/占例结构化 ----------
+// 「占驗N、」＝陳公獻原案；「占例N、」与「增補課例/占例：」标记后诸案＝注者今案。
+// 头部字段（年/月/日干支/时支/月将/课体标签/旬空落空）保守解析，失配留空不臆断；
+// 案文全块照录（含课式盘图原行）。日干支＋旬空可机器互证，偏差照录记校记。
+{
+  const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+  const ZHI12 = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const GZ = '[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]';
+  const Z = '[子丑寅卯辰巳午未申酉戌亥]';
+  const CHAPTER_RE = /^[^，。；：、？！\s　]{2,10}第[一二三四五六七八九十]+$/;
+  const CASE_RE = /^占(驗|例)([一二三四五六七八九十百]+)[、，]/;
+  const MARKER_RE = /^增補[課占]例[：:]$/;
+  // 无编号今案头（增補標记后紧随）：年干支＋月起句
+  const BARE_HEAD_RE = new RegExp(`^${GZ}(年|[正一二三四五六七八九十]{1,3}月)`);
+
+  // 课体标签词表：keju 节名（本脚本前段已落盘）＋头部常见简称/别称
+  const kejuNames = JSON.parse(readFileSync(path.join(outDir, 'keju.json'), 'utf8')).entries.map((e) => e.name);
+  const EXTRA_VOCAB = [
+    '重審', '元首', '涉害', '知一', '比用', '遙克', '蒿矢', '彈射', '昴星', '冬蛇掩目',
+    '別責', '八專', '伏吟', '反吟', '返吟', '斬關', '連茹', '進茹', '退茹', '間傳',
+    '稼穡', '從革', '潤下', '曲直', '炎上', '玄胎', '不備', '龍虎', '迎陽', '周遍',
+    '顧祖', '無祿', '絕嗣', '度厄', '三交', '亂首', '交車', '鑄印', '斫輪', '極陰',
+    '天獄', '天網', '三奇', '六儀', '遊子', '三陽', '三光', '時泰', '龍德', '斲輪',
+  ];
+  const VOCAB = [...new Set([...kejuNames, ...EXTRA_VOCAB])]
+    .filter((n) => n.length >= 2)
+    .sort((a, b) => b.length - a.length);
+
+  const parseHead = (head) => {
+    const f = {};
+    const mYear = head.match(new RegExp(`^(${GZ})年?`));
+    if (mYear) f.year = mYear[1];
+    const mMonth = head.match(new RegExp(`(正|閏?[一二三四五六七八九十]{1,2}|冬|臘|${Z})月`));
+    if (mMonth) f.month = mMonth[0];
+    const mDay = head.match(new RegExp(`(${GZ})日`));
+    if (mDay) f.day = mDay[1];
+    const mJiang = head.match(new RegExp(`(${Z})將`));
+    if (mJiang) f.jiang = mJiang[1];
+    const mHour = head.match(new RegExp(`(${GZ}|${Z})時`));
+    if (mHour) f.hourZhi = mHour[1].slice(-1);
+    if (!f.day) {
+      // 底本省「日」字两式：月＋日干支＋时干支時／月＋日干支＋支將
+      const mDH = head.match(new RegExp(`月(${GZ})(${GZ})時`));
+      const mDJ = mDH ? null : head.match(new RegExp(`月(${GZ})(${Z})將`));
+      if (mDH) { f.day = mDH[1]; f.hourZhi = mDH[2].slice(-1); }
+      else if (mDJ) f.day = mDJ[1];
+    }
+    const found = VOCAB.filter((v) => head.includes(v));
+    f.keti = found.filter((v) => !found.some((o) => o !== v && o.includes(v)));
+    const mKong = head.match(new RegExp(`(${Z}{1,3})空`));
+    if (mKong) f.kong = [...mKong[1].slice(-2)];
+    const mLuo = head.match(new RegExp(`(${Z}{1,3})落空`));
+    if (mLuo) f.luoKong = [...mLuo[1].slice(-2)];
+    return f;
+  };
+  const xunKongOf = (day) => {
+    const g = GAN.indexOf(day[0]);
+    const z = ZHI12.indexOf(day[1]);
+    if (g < 0 || z < 0) return null;
+    const shou = (z - g + 12) % 12;
+    return [ZHI12[(shou + 10) % 12], ZHI12[(shou + 11) % 12]];
+  };
+
+  const lines = readFileSync(path.join(root, 'docs/corpus/lrzn/text/03-juan03.txt'), 'utf8')
+    .split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const cases = [];
+  const caseIssues = [];
+  let chapter = '';
+  let augmented = false; // 本章内已见增補标记
+  let cur = null;
+  let afterMarker = false;
+  for (const line of lines) {
+    if (CHAPTER_RE.test(line)) {
+      chapter = line;
+      augmented = false;
+      cur = null;
+      afterMarker = false;
+      continue;
+    }
+    if (MARKER_RE.test(line)) {
+      augmented = true;
+      cur = null;
+      afterMarker = true;
+      continue;
+    }
+    const m = line.match(CASE_RE);
+    if (m) {
+      cur = { seq: cases.length + 1, kind: `占${m[1]}`, no: m[2], augmented: augmented || m[1] === '例', chapter, head: line.replace(CASE_RE, ''), text: [line] };
+      cases.push(cur);
+      afterMarker = false;
+      continue;
+    }
+    if (afterMarker && BARE_HEAD_RE.test(line)) {
+      // 增補标记后的无编号今案
+      cur = { seq: cases.length + 1, kind: '占例', no: '', augmented: true, chapter, head: line, text: [line] };
+      cases.push(cur);
+      afterMarker = false;
+      continue;
+    }
+    if (cur) cur.text.push(line);
+  }
+
+  let withDay = 0;
+  let kongChecked = 0;
+  for (const c of cases) {
+    Object.assign(c, parseHead(c.head));
+    if (c.day) withDay++;
+    if (c.day && c.kong) {
+      kongChecked++;
+      const exp = xunKongOf(c.day);
+      if (exp && exp.join('') !== c.kong.join('')) {
+        caseIssues.push(
+          `${c.chapter}·${c.kind}${c.no}：日干支${c.day}推旬空${exp.join('')}，底本记${c.kong.join('')}空，干支或空亡有讹，照录未改`,
+        );
+      }
+    }
+    if (!c.chapter) {
+      console.error(`✗ 占例无所属章: ${c.text[0].slice(0, 30)}`);
+      process.exit(1);
+    }
+  }
+  if (cases.length < 125 || cases.length > 145 || withDay < 125) {
+    console.error(`✗ 占例解析异常: 总数 ${cases.length}，含日干支 ${withDay}`);
+    process.exit(1);
+  }
+  writeFileSync(
+    path.join(outDir, 'cases.json'),
+    JSON.stringify(
+      {
+        source:
+          '《六壬指南注解》卷三 會纂占驗指南（ctext.org wiki res=516644 转录）。占驗＝明末清初·陳公獻原案；占例与增補課例＝今·張洪补注案。',
+        entries: cases.map((c) => ({
+          seq: c.seq,
+          kind: c.kind,
+          no: c.no,
+          ...(c.augmented ? { augmented: true } : {}),
+          chapter: c.chapter,
+          ...(c.year ? { year: c.year } : {}),
+          ...(c.month ? { month: c.month } : {}),
+          ...(c.day ? { day: c.day } : {}),
+          ...(c.hourZhi ? { hourZhi: c.hourZhi } : {}),
+          ...(c.jiang ? { jiang: c.jiang } : {}),
+          keti: c.keti ?? [],
+          kong: c.kong ?? [],
+          luoKong: c.luoKong ?? [],
+          text: c.text.join('\n'),
+        })),
+        textualIssues: caseIssues,
+      },
+      null,
+      1,
+    ),
+    'utf8',
+  );
+  const nAug = cases.filter((c) => c.augmented).length;
+  console.log(
+    `cases.json: 占例 ${cases.length}（原案 ${cases.length - nAug} + 今案 ${nAug}）；日干支 ${withDay}，旬空互证 ${kongChecked}（偏差 ${caseIssues.length}）`,
+  );
+}
