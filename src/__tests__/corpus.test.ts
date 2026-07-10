@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { findKeJing, foldKeName, getKeJing, getKeJingEntry } from '../keju';
+import { findTianJiang, findYueJiang, getLeiShen } from '../leishen';
 import {
   findMonthlyShenSha, findShenSha, getMonthlyShenSha, getShenShaIssues,
   getShenShaSections, monthlyAt, shenShaValue,
@@ -156,6 +157,36 @@ describe('逐月神煞立成（卷一）', () => {
 
   it('连书未分名照录并记校记', () => {
     expect(getShenShaIssues().some((s) => s.includes('连书'))).toBe(true);
+  });
+});
+
+describe('类神库（卷二神將釋）', () => {
+  it('十二月将 + 十二天将齐全', () => {
+    const all = getLeiShen();
+    expect(all.filter((e) => e.kind === '月将')).toHaveLength(12);
+    expect(all.filter((e) => e.kind === '天将')).toHaveLength(12);
+  });
+
+  it('月将 brief 为「所主/類為」原行；按支可查', () => {
+    const dm = findYueJiang('亥')!;
+    expect(dm.name).toBe('登明');
+    expect(dm.brief).toContain('所主禎祥');
+    expect(dm.brief).toContain('類為天雨師');
+    expect(findYueJiang('未')?.name).toBe('小吉');
+  });
+
+  it('天将简繁/古写均可查，brief 为定性段', () => {
+    expect(findTianJiang('贵人')?.name).toBe('貴人');
+    expect(findTianJiang('天一')?.name).toBe('貴人');
+    expect(findTianJiang('勾陈')?.name).toBe('勾陳');
+    const lh = findTianJiang('六合')!;
+    expect(lh.brief).toContain('和合');
+    expect(lh.blocks.map((b) => b.label)).toEqual(['論', '賦', '詩']);
+  });
+
+  it('六合主事段在論块（婚姻類神）', () => {
+    const lh = findTianJiang('六合')!;
+    expect(lh.blocks[0].text).toContain('六合主婚姻、喜慶');
   });
 });
 

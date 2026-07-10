@@ -454,6 +454,86 @@ console.log(
   console.log(`keju.json: 課經 ${keJing.length - xjCount} 节 + 心鏡 ${xjCount} 节${orphan ? `（节前散行 ${orphan}）` : ''}`);
 }
 
+// ---------- 类神（卷二《神將釋》）：十二月将 + 十二天将分节，論/賦/詩/類分块 ----------
+// 月将节提取「所主/類為/為姓」前缀行为 brief（类神要点，逐字照录）；
+// 天将节 brief 取首块前三行（家于/吉凶将性/主事定性段）。
+{
+  const YJ_RE = /^(登明|河魁|從魁|傳送|小吉|勝光|太乙|天罡|太衝|功曹|大吉|神[后後])([子丑寅卯辰巳午未申酉戌亥])$/;
+  const TJ_RE = /^(貴人|螣蛇|朱雀|六合|勾陳|青龍|天空|白虎|太常|玄武|太陰|天[后後])論$/;
+  const LABEL_RE = /^[賦詩類]$/;
+  const lines = read('02-juan02.txt');
+  const entries = [];
+  let cur = null; // { kind, name, zhi?, blocks: [{label, lines[]}] }
+  const open = (kind, name, zhi) => {
+    cur = { kind, name, zhi, blocks: [] };
+    entries.push(cur);
+  };
+  for (const line of lines) {
+    if (FURNITURE_RE.test(line) || TITLE_RE.test(line)) continue;
+    const yj = line.match(YJ_RE);
+    if (yj) {
+      open('月将', yj[1].replace('後', '后'), yj[2]);
+      continue;
+    }
+    const tj = line.match(TJ_RE);
+    if (tj) {
+      open('天将', tj[1].replace('天後', '天后'));
+      continue;
+    }
+    if (/^(大神總論|又總說|天將總論)$/.test(line)) {
+      open('總論', line);
+      continue;
+    }
+    if (!cur) continue;
+    if (LABEL_RE.test(line)) {
+      cur.blocks.push({ label: line, lines: [] });
+      continue;
+    }
+    // 首个未标注块 = 論；其余行归入最近块
+    if (!cur.blocks.length) cur.blocks.push({ label: '論', lines: [] });
+    cur.blocks[cur.blocks.length - 1].lines.push(line);
+  }
+  const yjN = entries.filter((e) => e.kind === '月将').length;
+  const tjN = entries.filter((e) => e.kind === '天将').length;
+  if (yjN !== 12 || tjN !== 12) {
+    console.error(`✗ 神將釋分节异常: 月将 ${yjN}／天将 ${tjN}`);
+    process.exit(1);
+  }
+  const briefOf = (e) => {
+    if (e.kind === '月将') {
+      return e.blocks
+        .flatMap((b) => b.lines)
+        .filter((l) => /^(所主|類為|為姓)/.test(l))
+        .join('\n');
+    }
+    if (e.kind === '天将') {
+      return (e.blocks[0]?.lines ?? []).slice(0, 3).join('\n');
+    }
+    return '';
+  };
+  const noBrief = entries.filter((e) => e.kind === '月将' && !briefOf(e)).map((e) => e.name);
+  if (noBrief.length) console.log(`⚠ 月将无「所主/類為」行: ${noBrief.join('、')}`);
+  writeFileSync(
+    path.join(outDir, 'leishen.json'),
+    JSON.stringify(
+      {
+        source: '欽定四庫全書本《六壬大全》卷二《神將釋》（ctext.org wiki res=260435 转录）',
+        entries: entries.map((e) => ({
+          kind: e.kind,
+          name: e.name,
+          ...(e.zhi ? { zhi: e.zhi } : {}),
+          brief: briefOf(e),
+          blocks: e.blocks.map((b) => ({ label: b.label, text: b.lines.join('\n\n') })),
+        })),
+      },
+      null,
+      1,
+    ),
+    'utf8',
+  );
+  console.log(`leishen.json: 月将 ${yjN} + 天将 ${tjN} + 總論 ${entries.length - yjN - tjN}`);
+}
+
 // ---------- 神煞（卷一）：三表映射化 + 月令杂列保守解析 ----------
 // 歲神煞（年支 12 值）／十天干神煞（日干 10 值）／十二地支神煞（日支 12 值）：
 //   「名 + 值串 [+ 尾注]」提为映射，非值串行保留为规则条。

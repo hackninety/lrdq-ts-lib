@@ -21,7 +21,7 @@
 ## 安装与使用
 
 ```bash
-npm install github:hackninety/lrdq-ts-lib#v0.9.0
+npm install github:hackninety/lrdq-ts-lib#v0.10.0
 ```
 
 ```ts

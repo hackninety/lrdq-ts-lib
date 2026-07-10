@@ -1,6 +1,6 @@
 {
   "name": "lrdq-ts-lib",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "大六壬典籍语料库（首册《六壬大全》明·四庫全書本全书）与《畢法賦》百法命中检测引擎 — Da LiuRen classics corpus & BiFa-100 pattern detector",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,6 +26,11 @@
       "types": "./dist/shensha.d.ts",
       "import": "./dist/shensha.js",
       "default": "./dist/shensha.js"
+    },
+    "./leishen": {
+      "types": "./dist/leishen.d.ts",
+      "import": "./dist/leishen.js",
+      "default": "./dist/leishen.js"
     }
   },
   "files": [
