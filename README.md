@@ -1,5 +1,12 @@
 # lrdq-ts-lib
 
+> **维护位置已迁移**：后续源码、问题反馈和独立版本发布统一位于 [common-ts-lib/packages/lrdq-ts-lib](https://github.com/hackninety/common-ts-lib/tree/main/packages/lrdq-ts-lib)。包名与公开接口保留，本仓库保留历史，不再作为新版本安装来源。
+>
+> 当前安装：`npm install https://github.com/hackninety/common-ts-lib/releases/download/lrdq-ts-lib-v0.11.0/lrdq-ts-lib-0.11.0.tgz`
+>
+> 以下为迁移前的历史说明，其中旧仓库安装命令仅供追溯；新的开发和发布流程见 [迁移说明](https://github.com/hackninety/common-ts-lib/blob/main/MIGRATION.md)。
+
+
 **大六壬典籍语料库**（已收《六壬大全》明·四庫全書本、《六壬心鏡》唐·徐道符、
 《六壬指南注解》明·陳公獻撰／今·張洪注）与 宋·凌福之《畢法賦》百法命中检测引擎。
 多书架构：manifest 携 `book/dynasty/author`、路径带书 slug 前缀、载荷按书分包懒加载；
